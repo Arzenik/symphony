@@ -4,7 +4,7 @@ namespace App\DTO;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-final class CreateTagDTO
+final class EditTagDTO
 {
     public function __construct(
         #[Assert\NotBlank]
@@ -16,4 +16,4 @@ final class CreateTagDTO
         public readonly string $color,
     ) {
     }
-}
+} 
