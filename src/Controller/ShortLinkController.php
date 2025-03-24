@@ -12,6 +12,7 @@ use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 final class ShortLinkController extends AbstractController
 {
@@ -78,7 +79,11 @@ final class ShortLinkController extends AbstractController
             userAgent: $request->headers->get('User-Agent', '')
         );
 
-        return $this->redirect($shortLink->getUrl());
+        return new RedirectResponse(
+            url: $shortLink->getUrl(),
+            status: Response::HTTP_MOVED_PERMANENTLY,
+            headers: ['Cache-Control' => 'no-store']
+        );
     }
 
     #[Route('/short-links/{shortCode}', methods: ['DELETE'], name: 'delete_short_link')]
@@ -89,5 +94,14 @@ final class ShortLinkController extends AbstractController
         $shortLinkService->deleteShortLink($shortCode);
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route('/short-links/{shortCode}/visits', methods: ['GET'], name: 'get_short_link_visits')]
+    public function getVisits(
+        string $shortCode,
+        ShortLinkService $shortLinkService,
+    ): Response {
+        $visits = $shortLinkService->getVisits($shortCode);
+        return $this->json($visits);
     }
 }

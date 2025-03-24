@@ -210,4 +210,57 @@ class ShortLinkService
         $this->em->remove($shortLink);
         $this->em->flush();
     }
+
+    public function getVisits(string $shortCode): array
+    {
+        $shortLink = $this->shortLinkRepository->findOneBy(['shortCode' => $shortCode]);
+        
+        if (!$shortLink) {
+            throw new NotFoundHttpException('Short link not found');
+        }
+
+        $visits = $this->em->getRepository(Visit::class)->findBy(
+            ['shortLink' => $shortLink],
+            ['createdAt' => 'DESC']
+        );
+
+        $totalVisits = count($visits);
+        $visitsPerDay = [];
+        $lastVisits = [];
+
+        foreach ($visits as $visit) {
+            // Grouper par jour pour les statistiques
+            $date = $visit->getCreatedAt()->format('Y-m-d');
+            if (!isset($visitsPerDay[$date])) {
+                $visitsPerDay[$date] = 0;
+            }
+            $visitsPerDay[$date]++;
+
+            // Collecter les 10 dernières visites avec détails
+            if (count($lastVisits) < 10) {
+                $lastVisits[] = [
+                    'id' => $visit->getId(),
+                    'createdAt' => $visit->getCreatedAt(),
+                    'ip' => $visit->getIp(),
+                    'userAgent' => $visit->getUserAgent(),
+                ];
+            }
+        }
+
+        // Trier les visites par jour
+        krsort($visitsPerDay);
+
+        return [
+            'shortCode' => $shortCode,
+            'url' => $shortLink->getUrl(),
+            'title' => $shortLink->getTitle(),
+            'statistics' => [
+                'totalVisits' => $totalVisits,
+                'visitsPerDay' => $visitsPerDay,
+            ],
+            'lastVisits' => $lastVisits,
+            'maxVisits' => $shortLink->getMaxVisits(),
+            'remainingVisits' => $shortLink->getMaxVisits() ? ($shortLink->getMaxVisits() - $totalVisits) : null,
+        ];
+    }
 }
