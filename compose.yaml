@@ -15,9 +15,13 @@ services:
       # The two next lines can be removed after initial installation
       SYMFONY_VERSION: ${SYMFONY_VERSION:-}
       STABILITY: ${STABILITY:-stable}
+      OAUTH_GITHUB_ID: ${OAUTH_GITHUB_ID}
+      OAUTH_GITHUB_SECRET: ${OAUTH_GITHUB_SECRET}
     volumes:
       - caddy_data:/data
       - caddy_config:/config
+      - .:/app
+      - ./api/docker/php/conf.d/app.dev.ini:/usr/local/etc/php/conf.d/app.dev.ini:ro
     ports:
       # HTTP
       - target: 80
@@ -31,6 +35,11 @@ services:
       - target: 443
         published: ${HTTP3_PORT:-443}
         protocol: udp
+    healthcheck:
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
 
 # Mercure is installed as a Caddy module, prevent the Flex recipe from installing another service
 ###> symfony/mercure-bundle ###
